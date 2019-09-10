@@ -123,12 +123,21 @@ fix_orphanedPod(){
     done
 }
 
-
 idleTimes=0
 IFS=$'\r\n'
+
+if docker ps | grep -w kubelet > /dev/null 2>&1 ; then
+    LOG_PATH=$( docker inspect kubelet  -f '{{.LogPath}}' )
+elif systemctl status kubelet > /dev/null  2>&1 ; then
+    journalctl -u kubelet -xe -n 3000 --no-pager > /tmp/kubelet.log
+    LOG_PATH='/tmp/kubelet.log'
+else
+    exist 1
+fi
+
 while :
 do
-    for item in `tail /var/log/messages`;
+    for item in `tail -n 3000 $LOG_PATH` ;
     do
         ## orphaned pod process
         if [[ $item == *"Orphaned pod"* ]] && [[ $item == *"but volume paths are still present on disk"* ]]; then
