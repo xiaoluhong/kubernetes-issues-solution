@@ -9,10 +9,16 @@ spec:
   jobTemplate:
     spec:
       activeDeadlineSeconds: 300
+      backoffLimit: 3
+      completions: 3
+      parallelism: 1
       template:
         spec:
           containers:
-          - image: registry.cn-shenzhen.aliyuncs.com/rancher/tools
+          - args:
+            - bash
+            - check-pod-state.sh
+            image: registry.cn-shenzhen.aliyuncs.com/rancher/tools
             imagePullPolicy: Always
             name: check-pod-job
             resources: {}
@@ -26,7 +32,8 @@ spec:
             terminationMessagePath: /dev/termination-log
             terminationMessagePolicy: File
             tty: true
-          dnsPolicy: ClusterFirst
+          dnsPolicy: ClusterFirstWithHostNet
+          hostNetwork: true
           restartPolicy: Never
           schedulerName: default-scheduler
           securityContext: {}
