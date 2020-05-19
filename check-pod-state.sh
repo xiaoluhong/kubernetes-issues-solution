@@ -23,7 +23,7 @@ MAIL_SMTP_SERVER=$( echo ${MAIL_SMTP_SERVER} | base64 -d | tr 'A-Z' 'a-z' )
 MAIL_SMTP_PORT=${MAIL_SMTP_PORT}
 # 是否启用TSL认证
 MAIL_TLS_CHECK=${MAIL_TLS_CHECK:-true}
-# 自签名TSL认证CA证书
+# 自签名TSL认证CA证书，需要base64加密
 MAIL_CACERT=$( echo ${MAIL_CACERT} | base64 -d )
 MAIL_CA_PATH=${MAIL_CA_PATH:-'/root/cacert.pem'}
 
