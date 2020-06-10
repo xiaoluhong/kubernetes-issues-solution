@@ -37,11 +37,6 @@ KUBE_DEL_POD()
     kubectl delete pods $1
 }
 
-
-# 初始获取Pod状态
-POD_STATUS_LIST=$( KUBE_GET_POD | grep -E ${STATUS_TYPE} );
-echo "${POD_STATUS_LIST}" | tee /tmp/pod-list.txt
-
 send_mail ()
 {
 cat << EOF > mail.txt
@@ -82,6 +77,10 @@ EOF
         return
     fi
 }
+
+echo "初始获取 Pod 状态"
+POD_STATUS_LIST=$( KUBE_GET_POD | grep -E ${STATUS_TYPE} );
+echo "${POD_STATUS_LIST}" | tee /tmp/pod-list.txt
 
 if [[ -n "${POD_STATUS_LIST}" ]]; then
     echo '检查到异常 Pod'
@@ -134,4 +133,6 @@ if [[ -n "${POD_STATUS_LIST}" ]]; then
             exit
         fi
     fi
+else
+    echo "没有异常 Pod"
 fi
