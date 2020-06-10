@@ -7,6 +7,9 @@ else
     NS="--all-namespaces"
 fi
 
+# 定义是否确认删除异常Pod
+CONFIRM_DELETE=${CONFIRM_DELETE:-false}
+
 # 定义是否发送Pod异常邮件告警
 MAIL_ALARM=${MAIL_ALARM:-false}
 
@@ -27,20 +30,11 @@ MAIL_CA_PATH=${MAIL_CA_PATH:-'/root/cacert.pem'}
 # 定义要监控的Pod状态
 STATUS_TYPE=${STATUS_TYPE:-Evicted|Terminating|Error|OutOfmemory|CreateContainerError|Failed|Unknown};
 
-KUBE_GET_POD()
-{
-    kubectl get pod ${NS} -o custom-columns=NAMESPACES:.metadata.namespace,NAME:.metadata.name,STATUS:.status.phase | grep -v NAMESPACES
-}
-
-KUBE_DEL_POD()
-{
-    kubectl delete pods $1
-}
-
+KUBE_COMMAND=$( kubectl get pod ${NS} -o custom-columns=NAMESPACES:.metadata.namespace,NAME:.metadata.name,STATUS:.status.phase | grep -v NAMESPACES );
 
 # 初始获取Pod状态
-POD_STATUS_LIST=$( KUBE_GET_POD | grep -E ${STATUS_TYPE} );
-echo "${POD_STATUS_LIST}" | tee /tmp/pod-list.txt
+POD_STATUS_LIST=$( echo "${KUBE_COMMAND}" | grep -E "${STATUS_TYPE}" );
+echo "${POD_STATUS_LIST}"
 
 send_mail ()
 {
@@ -84,54 +78,38 @@ EOF
 }
 
 if [[ -n "${POD_STATUS_LIST}" ]]; then
-    echo '检查到异常 Pod'
-    echo '删除异常 Pod'
-    NS_POD=$( cat /tmp/pod-list.txt | awk '{print " -n " $1" "$2}' )
-    for i in "$NS_POD";
-    do
-        KUBE_DEL_POD "$i"
-    done
-
-    echo '等待30s，然后检查异常 Pod 并统计数量'
-    sleep 30
-    CHECK_POD_COUNT_1=$( KUBE_GET_POD | grep -E ${STATUS_TYPE} | wc -l )
+    echo '检查到异常Pod'
+    echo '等待10s，然后检查异常Pod并统计数量'
+    sleep 10
+    CHECK_POD_COUNT_1=$( echo "${KUBE_COMMAND}" | grep -E "${STATUS_TYPE}" | wc -l )
     echo "CHECK_POD_COUNT_1=$CHECK_POD_COUNT_1"
 
-    if [[ ${CHECK_POD_COUNT_1} > 0 ]]; then
-        echo "第一次检查异常 Pod > 0"
-        echo '再等30s，然后再检查异常 Pod 并统计数量'
-        sleep 30
-        CHECK_POD_COUNT_2=$( KUBE_GET_POD | grep -E ${STATUS_TYPE} | wc -l )
-        echo "CHECK_POD_COUNT_2=$CHECK_POD_COUNT_2"
+    echo '再等10s，然后再检查异常Pod并统计数量'
+    sleep 10
+    CHECK_POD_COUNT_2=$( echo "${KUBE_COMMAND}" | grep -E "${STATUS_TYPE}" | wc -l )
+    echo "CHECK_POD_COUNT_2=$CHECK_POD_COUNT_2"
 
-        if [[ $[CHECK_POD_COUNT_2-CHECK_POD_COUNT_1 ] > 5 ]]; then
-            echo '第二次检查比第一次检查异常 Pod 数据大于 5，再等30s进行第三次检查'
-            sleep 30
+    echo '如果第二次检查比第一次检查多5，然后再等10s进行第三次检查'
+    if [[ $[CHECK_POD_COUNT_2-CHECK_POD_COUNT_1 ] > 5 ]]; then
+        sleep 10
+        CHECK_POD_COUNT_3=$( echo "${KUBE_COMMAND}" | grep -E "${STATUS_TYPE}" | wc -l )
+        echo "CHECK_POD_COUNT_3=$CHECK_POD_COUNT_3"
 
-            POD_STATUS_LIST=$( KUBE_GET_POD | grep -E ${STATUS_TYPE} );
-            echo "${POD_STATUS_LIST}" > /tmp/pod-list.txt
-
-            CHECK_POD_COUNT_3=$( cat /tmp/pod-list.txt | wc -l )
-            echo "CHECK_POD_COUNT_3=$CHECK_POD_COUNT_3"
-
-            # 如果第三次相比第二次依然在增长，则触发删除异常Pod，并可选邮件告警
-            if [[ $[CHECK_POD_COUNT_3-CHECK_POD_COUNT_2 ] > 5 ]]; then
-                echo "第三次检查相比第二次检查异常 Pod 数依然在增长"
-                echo '再次删除异常 Pod'
-
-                NS_POD=$( cat /tmp/pod-list.txt | awk '{print " -n " $1" "$2}' )
-                for i in "$NS_POD";
-                do
-                    KUBE_DEL_POD "$i"
-                done
-                if [[ ${MAIL_ALARM} == true ]]; then
-                    echo '发送邮件告警'
-                    send_mail "${POD_STATUS_LIST}"
-                fi
+        echo '如果第三次相比第二次依然在增长，则触发删除异常Pod，并可选邮件告警'
+        if [[ $[CHECK_POD_COUNT_3-CHECK_POD_COUNT_2 ] > 5 ]]; then
+            POD_STATUS_LIST=$( echo "${KUBE_COMMAND}" | grep -E ${STATUS_TYPE} );
+            echo ${POD_STATUS_LIST}
+            if [[ ${CONFIRM_DELETE} == true ]]; then
+                echo "${POD_STATUS_LIST}" | awk '{print "-n "$1" "$2 }' | xargs kubectl delete pod
+            fi
+            if [[ ${MAIL_ALARM} == true ]]; then
+                echo '发送邮件告警'
+                send_mail "${POD_STATUS_LIST}"
             fi
         else
-            echo "没有异常 Pod 增加"
+            echo 'Pod没有快速增长'
             exit
         fi
     fi
+
 fi
