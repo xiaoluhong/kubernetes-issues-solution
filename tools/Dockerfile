@@ -94,8 +94,7 @@ RUN 	curl -LSs https://github.com/zeromake/docker-debug/releases/download/${DOCK
 
 # Installing kubectl-debug
 ARG     KUBECTL_VERSION=0.1.1
-RUN 	mkdir /tmp \
-    &&  curl -LSs https://github.com/aylei/kubectl-debug/releases/download/v${KUBECTL_VERSION}/kubectl-debug_${KUBECTL_VERSION}_linux_amd64.tar.gz -o /tmp/kubectl-debug.tar.gz \
+RUN 	curl -LSs https://github.com/aylei/kubectl-debug/releases/download/v${KUBECTL_VERSION}/kubectl-debug_${KUBECTL_VERSION}_linux_amd64.tar.gz -o /tmp/kubectl-debug.tar.gz \
     &&  cd /tmp \
     &&  tar -zxf kubectl-debug.tar.gz \
     &&  mv kubectl-debug /usr/local/bin/kubectl-debug \
