@@ -1,11 +1,8 @@
-FROM    alpine:3.10
+FROM    alpine
 
 RUN     set -ex \
     &&  apk update \
     &&  apk upgrade \
-    &&  echo "http://mirrors.aliyun.com/alpine/edge/community" >> /etc/apk/repositories \
-    &&  echo "http://mirrors.aliyun.com/alpine/edge/main" >> /etc/apk/repositories \
-    &&  echo "http://mirrors.aliyun.com/alpine/edge/testing" >> /etc/apk/repositories \
     &&  apk add --no-cache \
         tzdata\
         apache2-utils \
