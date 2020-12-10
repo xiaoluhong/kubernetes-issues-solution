@@ -75,13 +75,13 @@ RUN 	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
 RUN     mv /usr/sbin/tcpdump /usr/bin/tcpdump
 
 # Installing ctop - top-like container monitor
-ARG     CTOP_VERSION=0.7.3
+ARG     CTOP_VERSION=0.7.5
 RUN 	curl -LSs https://github.com/bcicen/ctop/releases/download/v${CTOP_VERSION}/ctop-${CTOP_VERSION}-linux-amd64 -o /usr/local/bin/ctop \
 	&& 	chmod +x /usr/local/bin/ctop \
     &&  rm -rf /tmp/*
 
 # Installing calicoctl
-ARG     CALICOCTL_VERSION=v3.14.1
+ARG     CALICOCTL_VERSION=v3.17.0
 RUN 	curl -LSs https://github.com/projectcalico/calicoctl/releases/download/${CALICOCTL_VERSION}/calicoctl -o /usr/local/bin/calicoctl \
 	&& 	chmod +x /usr/local/bin/calicoctl \
     &&  rm -rf /tmp/*
@@ -113,7 +113,7 @@ RUN     curl -LSs https://github.com/gcla/termshark/releases/download/v${TERMSHA
     &&  chmod +x /usr/local/bin/termshark
 
 # Installing etcdctl
-ARG     ETCD_VER=v3.4.9
+ARG     ETCD_VER=v3.4.14
 ## choose either URL
 ARG     GOOGLE_URL=https://storage.googleapis.com/etcd
 ARG     GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
