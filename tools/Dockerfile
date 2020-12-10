@@ -1,6 +1,9 @@
 FROM    alpine:3.10
 
 RUN     set -ex \
+    &&  echo "http://mirrors.aliyun.com/alpine/edge/community" > /etc/apk/repositories \
+    &&  echo "http://mirrors.aliyun.com/alpine/edge/main" > /etc/apk/repositories \
+    &&  echo "http://mirrors.aliyun.com/alpine/edge/testing" > /etc/apk/repositories \
     &&  apk update \
     &&  apk upgrade \
     &&  apk add --no-cache \
