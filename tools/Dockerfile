@@ -7,6 +7,7 @@ RUN     set -ex \
     &&  apk update \
     &&  apk upgrade \
     &&  apk add --no-cache \
+    	git \
         tzdata\
         apache2-utils \
         bash \
@@ -64,6 +65,7 @@ RUN     set -ex \
         httpie \
         fio \
         atop \
+    &&  go get -u github.com/google/pprof \
     &&  rm -rf /tmp/* \
     &&  rm -rf /var/cache/apk/*
 
