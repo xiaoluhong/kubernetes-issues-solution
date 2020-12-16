@@ -39,6 +39,8 @@ function title {
 prompt
 
 source <(kubectl completion bash)
+source /usr/share/bash-completion/bash_completion
+
 export GOPATH=/root/go
 export GOBIN=
 export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
