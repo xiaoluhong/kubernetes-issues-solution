@@ -110,7 +110,7 @@ RUN     curl -LSs -o /usr/local/bin/kubectl https://storage.googleapis.com/kuber
 
 # Installing termshark
 ARG     TERMSHARK_VERSION=2.1.1
-RUN     curl -LSs https://github.com/gcla/termshark/releases/download/v${TERMSHARK_VERSION}/termshark_${TERMSHARK_VERSION}_linux_x64.tar.gz -o /tmp/termshark_${TERMSHARK_VERSION}_linux_x64.tar.gz -v \
+RUN     curl -LSs https://github.com/gcla/termshark/releases/download/v${TERMSHARK_VERSION}/termshark_${TERMSHARK_VERSION}_linux_x64.tar.gz -o /tmp/termshark_${TERMSHARK_VERSION}_linux_x64.tar.gz \
     &&  tar -zxvf /tmp/termshark_${TERMSHARK_VERSION}_linux_x64.tar.gz \
     &&  mv termshark_${TERMSHARK_VERSION}_linux_x64/termshark /usr/local/bin/termshark \
     &&  chmod +x /usr/local/bin/termshark
@@ -126,7 +126,7 @@ RUN     rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz \
     &&  rm -rf /tmp/etcd-download-test \
     &&  mkdir -p /tmp/etcd-download-test \
     &&  curl -LSs ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz \
-    &&  tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1 \
+    &&  tar xzf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1 \
     &&  rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz \
     &&  cp -rf /tmp/etcd-download-test/etcdctl /usr/local/bin/etcdctl \
     &&  chmod +x /usr/local/bin/etcdctl \
