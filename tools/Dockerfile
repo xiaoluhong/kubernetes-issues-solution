@@ -8,6 +8,7 @@ RUN     set -ex \
     &&  apk upgrade \
     &&  apk add --no-cache \
     	git \
+	graphviz \
         tzdata\
         apache2-utils \
         bash \
