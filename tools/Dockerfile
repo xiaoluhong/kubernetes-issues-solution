@@ -122,7 +122,8 @@ ARG     GOOGLE_URL=https://storage.googleapis.com/etcd
 ARG     GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
 ARG     DOWNLOAD_URL=${GOOGLE_URL}
 
-RUN     rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz \
+RUN     go get -u github.com/google/pprof \
+    &&  rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz \
     &&  rm -rf /tmp/etcd-download-test \
     &&  mkdir -p /tmp/etcd-download-test \
     &&  curl -LSs ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz \
