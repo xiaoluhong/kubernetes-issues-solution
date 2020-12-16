@@ -66,7 +66,6 @@ RUN     set -ex \
         httpie \
         fio \
         atop \
-    &&  go get -u github.com/google/pprof \
     &&  rm -rf /tmp/* \
     &&  rm -rf /var/cache/apk/*
 
@@ -136,6 +135,5 @@ RUN     go get -u github.com/google/pprof \
 # Settings
 ADD     motd /etc/motd
 ADD     profile /etc/profile
-ADD  	.bashrc /root/.bashrc
 
 CMD     ["/bin/bash","-l"]
