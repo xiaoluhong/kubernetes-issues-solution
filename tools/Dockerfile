@@ -136,6 +136,6 @@ RUN     go get -u github.com/google/pprof \
 # Settings
 ADD     motd /etc/motd
 ADD     profile /etc/profile
-ADD  	.bashrc ~/
+ADD  	.bashrc ~/.bashrc
 
 CMD     ["/bin/bash","-l"]
