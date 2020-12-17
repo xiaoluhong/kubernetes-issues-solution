@@ -8,7 +8,7 @@ RUN     set -ex \
     &&  apk upgrade \
     &&  apk add --no-cache \
     	git \
-	graphviz \
+	    graphviz \
         tzdata\
         apache2-utils \
         bash \
@@ -66,6 +66,8 @@ RUN     set -ex \
         httpie \
         fio \
         atop \
+        glances \
+        websocat \
     &&  rm -rf /tmp/* \
     &&  rm -rf /var/cache/apk/*
 

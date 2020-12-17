@@ -17,13 +17,13 @@ Kubernetes also uses network namespaces. Kubelets creates a network namespace pe
 
 Cool thing about namespaces is that you can switch between them. You can enter a different container's network namespace, perform some troubleshooting on its network's stack with tools that aren't even installed on that container. Additionally, `netshoot` can be used to troubleshoot the host itself by using the host's network namespace. This allows you to perform any troubleshooting without installing any new packages directly on the host or your application's package. 
 
-* **Container's Network Namespace:** If you're having networking issues with your application's container, you can launch `netshoot` with that container's network namespace like this :
+* **Container's Network Namespace:** If you're having networking issues with your application's container, you can launch `netshoot` with that container's network namespace like this:
 
-`$ docker run -it --net container:<container_name> nicolaka/netshoot`
+    `$ docker run -it --net container:<container_name> nicolaka/netshoot`
 
-* **Host's Network Namespace:** If you think the networking issue is on the host itself, you can launch `netshoot` with that host's network namespace. This is how:
- 
-`$ docker run -it --net host nicolaka/netshoot`
+* **Host's Network Namespace:** If you think the networking issue is on the host itself, you can launch `netshoot` with that host's network namespace:
+
+    `$ docker run -it --net host nicolaka/netshoot`
 
 * **Network's Network Namespace:** If you want to troubleshoot a Docker network, you can enter the network's namespace using `nsenter`. This is explained in the `nsenter` section below.
 
@@ -31,11 +31,11 @@ Cool thing about namespaces is that you can switch between them. You can enter a
 
 If you want to spin up a throw away container for debugging.
 
-`$ kubectl run --generator=run-pod/v1 tmp-shell --rm -i --tty --image nicolaka/netshoot -- /bin/bash`
+`$ kubectl run tmp-shell --rm -i --tty --image nicolaka/netshoot -- /bin/bash`
 
 And if you want to spin up a container on the host's network namespace.
 
-`$ kubectl run tmp-shell --generator=run-pod/v1 --rm -i --tty --overrides='{"spec": {"hostNetwork": true}}'  --image nicolaka/netshoot  -- /bin/bash`
+`$ kubectl run tmp-shell --rm -i --tty --overrides='{"spec": {"hostNetwork": true}}'  --image nicolaka/netshoot  -- /bin/bash`
 
 **Network Problems** 
 
@@ -69,6 +69,7 @@ To troubleshoot these issues, `netshoot` includes a set of powerful tools as rec
     ethtool
     file
     fping
+    httpie
     iftop
     iperf
     iproute2
@@ -97,83 +98,17 @@ To troubleshoot these issues, `netshoot` includes a set of powerful tools as rec
     strace
     tcpdump
     tcptraceroute
+    termshark
+    tshark
     util-linux
     vim
+    websocat
 
-## **Docker EE 2.0 + Kubernetes Use Cases:** 
-Here's a list of use-cases that can help you understand when and how to use this container to solve networking issues in your Docker cluster. Please feel free to add your own use-case where you used `netshoot` to investigate, trouble-shoot, or just learn more about your environment!!!
-
-
-## Managing Kubernetes Calico CNI with calicoctl
-
-In Docker Enterprise Edition, and in so many Kubernetes-based solutions, [Calico](https://www.projectcalico.org/) is used as the default CNI plugin of choice. This means that all the pod networking related resources ( IP assignment, routing, network policies, etc..) is handled by Calico. [calicoctl](https://github.com/projectcalico/calicoctl) is a cli tool to makes it easy to manage Calico network and security policy, as well as other Calico configurations. The calicoctl tool talks directly to `etcd`, so it's often not possible or recommended to expose etcd outside of the Kubernetes cluster. A recommended way to use calicoctl is to run it on a the master node inside the cluster. 
-
-Assuming you are running Docker EE 2.0 (although this should work on any Kuberenetes cluster with Calico installed), run the `netshoot` as a deployment using [this deployment](configs/netshoot-calico.yaml). This deployment will use the `kube-system` namespace.
-
-```
-# Note: This step assumes you loaded UCP client bundle and have kubectl working as expected.
-🐳  → kubectl apply -f netshoot-calico.yaml
-```
-
-This deployment will deploy a single pod on a master node and automatically load up etcd certs so you can easily start using calicoctl. Now it's time to exec into the pod:
-
-```
-🐳  → kubectl get pod --selector=app=netshoot -n kube-system
-NAME                                      READY     STATUS    RESTARTS   AGE
-netshoot-calico-deploy-57b8896459-rzqz4   1/1       Running   0          1h
-```
-
-Now exec into this pod and use the calicoctl directly without any further configurations! Full documentations on using the calicoctl tool is found [here](https://docs.projectcalico.org/v3.1/reference/calicoctl/commands/).
-
-```
-🐳  → kubectl exec -it -n kube-system netshoot-calico-deploy-57b8896459-rzqz4 -- /bin/bash -l
-                    dP            dP                           dP
-                    88            88                           88
-88d888b. .d8888b. d8888P .d8888b. 88d888b. .d8888b. .d8888b. d8888P
-88'  `88 88ooood8   88   Y8ooooo. 88'  `88 88'  `88 88'  `88   88
-88    88 88.  ...   88         88 88    88 88.  .88 88.  .88   88
-dP    dP `88888P'   dP   `88888P' dP    dP `88888P' `88888P'   dP
-
-Welcome to Netshoot! (github.com/nicolaka/netshoot)
-root @ /
- [1] 🐳  → calicoctl get wep
-WORKLOAD                            NODE              NETWORKS             INTERFACE
-nginx-deployment-569477d6d8-98xv5   ip-10-56-14-210   192.168.134.207/32   calia756b40818a
-netshoot-deploy-6bffc797bf-cfgpp    ip-10-56-17-161   192.168.63.80/32     cali50d3753ec26
-nginx-deployment-569477d6d8-6klz6   ip-10-56-17-161   192.168.63.79/32     caliaef53a8ccae
-
-
-root @ /
- [2] 🐳  → calicoctl get ippool
-NAME                  CIDR
-default-ipv4-ippool   192.168.0.0/16
-
-
-root @ /
- [3] 🐳  → calicoctl get bgpconfig -o yaml
-apiVersion: projectcalico.org/v3
-items:
-- apiVersion: projectcalico.org/v3
-  kind: BGPConfiguration
-  metadata:
-    creationTimestamp: 2018-05-03T18:04:13Z
-    name: default
-    resourceVersion: "4519634"
-    uid: 631aa7d6-4efc-11e8-92d5-06982eb5f90e
-  spec:
-    asNumber: 63400
-    logSeverityScreen: Info
-    nodeToNodeMeshEnabled: false
-kind: BGPConfigurationList
-metadata:
-  resourceVersion: "6152496"
-```
-
-##**Docker + Swarm Use Cases:** 
+## **Sample Use-cases** 
 
 ## iperf 
 
-Purpose : test networking performance between two containers/hosts. 
+Purpose: test networking performance between two containers/hosts. 
 
 Create Overlay network:
 
@@ -252,8 +187,6 @@ tcpdump: listening on eth0, link-type EN10MB (Ethernet), capture size 262144 byt
 
 More info on `tcpdump` can be found [here](http://www.tcpdump.org/tcpdump_man.html).
 
-
-
 ## netstat
 
 Purpose: `netstat` is a useful tool for checking your network configuration and activity. 
@@ -291,7 +224,6 @@ There are several states that ports will be discovered as:
 - `closed`: the pathway to the port is open but there is no application listening on this port.
 - `filtered`: the pathway to the port is closed, blocked by a firewall, routing rules, or host-based rules.
 
-
 ## iftop
 
 Purpose: iftop does for network usage what top does for CPU usage. It listens to network traffic on a named interface and displays a table of current bandwidth usage by pairs of hosts.
@@ -309,13 +241,11 @@ ce4ff40a5456        nicolaka/netshoot:latest   "iperf -s -p 9999"       5 minute
 
 ![iftop.png](img/iftop.png)
 
-
 ## drill
 
 Purpose: drill is a tool	to designed to get all sorts of information out of the DNS.
 
 Continuing the `iperf` example, we'll use `drill` to understand how services' DNS is resolved in Docker. 
-
 
 ```
 🐳  → docker run -it --net container:perf-test-a.1.bil2mo8inj3r9nyrss1g15qav nicolaka/netshoot drill -V 5 perf-test-b
@@ -353,7 +283,7 @@ perf-test-b.	600	IN	A	10.0.3.4 <<<<<<<<<<<<<<<<<<<<<<<<<< Service VIP
 
 ## netcat
 
-Purpose: a simple Unix utility that reads and writes data across network connections, using the TCP or UDP protocol. It's useful for testing and troubleshooting TCP/UDP connections. If there's a firewall rule blocking certain ports, `netcat` can be used to detect
+Purpose: a simple Unix utility that reads and writes data across network connections, using the TCP or UDP protocol. It's useful for testing and troubleshooting TCP/UDP connections. `netcat` can be used to detect if there's a firewall rule blocking certain ports.
 
 ```
 🐳  →  docker network create -d overlay my-ovl
@@ -370,8 +300,7 @@ Connection to service-a 8080 port [tcp/http-alt] succeeded!
 
 ```
 ##  netgen
-`netgen` is a simple [script](netgen.sh) that will generate a packet of data between containers periodically using `netcat`. It's purpose is to use the generated traffic to demonstrate different features of the networking stack.
-
+Purpose: `netgen` is a simple [script](netgen.sh) that will generate a packet of data between containers periodically using `netcat`. The generated traffic can be used to demonstrate different features of the networking stack.
 
 `netgen <host> <ip>` will create a `netcat` server and client listening and sending to the same port.
 
@@ -416,7 +345,6 @@ srvc.2.vu47gf0sdmje@moby    | Listener started on port 5000
 ...
 ```
 
-
 ##  iproute2
 
 purpose: a collection of utilities for controlling TCP / IP networking and traffic control in Linux.
@@ -448,7 +376,6 @@ More info on `iproute2` [here](http://lartc.org/howto/lartc.iproute2.tour.html)
 ## nsenter
 
 Purpose: `nsenter` is a powerful tool allowing you to enter into any namespaces. `nsenter` is available inside `netshoot` but requires `netshoot` to be run as a privileged container. Additionally, you may want to mount the `/var/run/docker/netns` directory to be able to enter any network namespace including bridge and overlay networks. 
-
 
 With `docker run --name container-B --net container:container-A `, docker uses `container-A`'s network namespace ( including interfaces and routes) when creating `container-B`. This approach is helpful for troubleshooting network issues at the container level. To troubleshoot network issues at the bridge or overlay network level, you need to enter the `namespace` of the network _itself_. `nsenter` allows you to do that. 
 
@@ -518,11 +445,10 @@ For example, if we wanted to check the L2 forwarding table for a overlay network
  
 # Listing all docker-created network namespaces
  
- / # cd /var/run/docker/netns/
+/ # cd /var/run/docker/netns/
 /var/run/docker/netns # ls
 0b1b36d33313  1-9tp0f348do  14d1428c3962  645eb414b538  816b96054426  916dbaa7ea76  db9fd2d68a9b  e79049ce9994  f857b5c01ced
 1-9r17dodsxt  1159c401b8d8  1a508036acc8  7ca29d89293c  83b743f2f087  aeed676a57a5  default       f22ffa5115a0
-
 
 # The overlay network that we created had an id of 9tp0f348donsdj75pktssd97b. All overlay networks are named <number>-<id>. We can see it in the list as `1-9tp0f348do`. To enter it:
 
@@ -630,7 +556,6 @@ br0		8000.0215b8e7deb3	no		vxlan1
 							veth2
 							veth3
 							veth4
-							
 ```
 
 ## CTOP
@@ -639,25 +564,28 @@ ctop is a free open source, simple and cross-platform top-like command-line tool
 
 To get data into ctop, you'll need to bind docker.sock into the netshoot container.
 
-```
-/ # docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock nicolaka/netshoot ctop
-```
+`/ # docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock nicolaka/netshoot ctop`
 
 ![ctop.png](img/ctop.png)
 
 It will display running and existed containers with useful metrics to help troubleshoot resource issues; hit "q" to exit.
 
+## Termshark
 
-## Feedback + Contribution
+Termshark is a terminal user-interface for tshark. It allows user to read pcap files or sniff live interfaces with Wireshark's display filters. 
 
-Feel free to provide feedback and contribute networking troubleshooting tools and use-cases by opening PRs.
+```
+# Launching netshoot with NET_ADMIN and CAP_NET_RAW capabilities. Capturing packets on eth0 with icmp 
+/ # docker run --rm --cap-add=NET_ADMIN --cap-add=CAP_NET_RAW -it nicolaka/netshoot termshark -i eth0 icmp
+```
 
+```
+# Launching netshoot with NET_ADMIN and CAP_NET_RAW capabilities Reading packets from ipv4frags.pcap
 
+/ # docker run --rm --cap-add=NET_ADMIN --cap-add=CAP_NET_RAW -v /tmp/ipv4frags.pcap:/tmp/ipv4frags.pcap -it nicolaka/netshoot termshark -r /tmp/ipv4frags.pcap
+```
+More info on `termshark` [here](https://github.com/gcla/termshark)
 
+## Feedback & Contribution
 
-
-
-
- 
-
-
+Feel free to provide feedback and contribute networking troubleshooting tools and use-cases by opening PRs. If you would like to add any package, open a PR with the rationale and ensure that you update both the Dockerfile and the README with some examples on how to use it!
