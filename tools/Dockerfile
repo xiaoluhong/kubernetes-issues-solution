@@ -137,5 +137,6 @@ RUN     go get -u github.com/google/pprof \
 # Settings
 ADD     motd /etc/motd
 ADD     profile /etc/profile
+ENV     GOPATH=/root/go GOBIN='' PATH=$PATH:$GOROOT/bin:/root/go/bin
 
 CMD     ["/bin/bash","-l"]
